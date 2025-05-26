@@ -1,0 +1,34 @@
+# <type>(<scope>): <subject>
+# 
+# <body>
+# 
+# <footer>
+# 
+# # Type categories:
+# #   feat     : A new feature
+# #   fix      : A bug fix
+# #   docs     : Documentation changes
+# #   style    : Changes that do not affect the meaning of the code (formatting, etc.)
+# #   refactor : Code change that neither fixes a bug nor adds a feature
+# #   test     : Adding or modifying tests
+# #   chore    : Changes to the build process or auxiliary tools and libraries
+# #   perf     : Performance improvements
+# #   ci       : Changes to CI configuration files and scripts
+# #   build    : Changes that affect the build system or external dependencies
+# #   revert   : Reverts a previous commit
+# 
+# # Subject rules:
+# #   - Use imperative, present tense (e.g., "add" not "added")
+# #   - Don't capitalize the first letter
+# #   - No period (.) at the end
+# 
+# # Body rules:
+# #   - Optional
+# #   - Explain the "what" and "why" rather than the "how"
+# #   - Wrap lines at 72 characters
+# 
+# # Footer rules:
+# #   - Optional
+# #   - Reference issues and pull requests
+# #   - Document breaking changes (BREAKING CHANGE: <description>)
+# #   - Reference issues that this commit closes (Closes #123, Fixes #456)
