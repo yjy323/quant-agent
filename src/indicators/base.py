@@ -1,9 +1,11 @@
-# indicator_module/base.py
+# indicators/base.py
 
 from abc import ABC, abstractmethod
 from typing import Any, Dict
 
 import pandas as pd
+
+from .exceptions import IndicatorError
 
 
 class BaseIndicator(ABC):
@@ -29,9 +31,10 @@ class BaseIndicator(ABC):
         required_cols = {"open", "high", "low", "close", "volume"}
         if not required_cols.issubset(set(ohlcv_df.columns)):
             missing = required_cols.difference(set(ohlcv_df.columns))
-            raise ValueError(f"OHLCV DataFrame에 필수 컬럼이 누락되었습니다: {missing}")
+            raise IndicatorError(
+                f"OHLCV DataFrame에 필수 컬럼이 누락되었습니다: {missing}"
+            )
 
-        # 얕은 참조: 입력된 DataFrame이 이미 정렬된 상태이므로, 내부에서 재정렬하지 않습니다.
         self.ohlcv: pd.DataFrame = ohlcv_df
 
     @abstractmethod

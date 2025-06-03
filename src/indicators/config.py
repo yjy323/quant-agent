@@ -1,8 +1,8 @@
-# indicator_module/config.py
+# indicators/config.py
 
 """
 ─────────────────────────────────────────────────────────────────────────────────────────────────
-  indicator_module/config.py
+  indicators/config.py
 
   • 이 파일은 각종 보조 지표(Indicator) 클래스에서 사용하는 기본 파라미터(윈도우 크기, 표준편차 배수 등)를
     중앙집중식으로 관리합니다.
