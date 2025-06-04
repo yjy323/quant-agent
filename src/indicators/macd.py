@@ -10,9 +10,9 @@ from .config import MACD_DEFAULT_FAST, MACD_DEFAULT_SIGNAL, MACD_DEFAULT_SLOW
 from .exceptions import IndicatorError
 
 
-class MACDIndicatorCustom(BaseIndicator):
+class MACDIndicator(BaseIndicator):
     """
-    ■ MACDIndicatorCustom ■
+    ■ MACDIndicator ■
     • MACD(Moving Average Convergence Divergence)를 계산합니다.
     • 기본 fast, slow, signal 값은 config에 정의된 값을 사용합니다.
     • calculate(full_series=False)

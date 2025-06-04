@@ -3,14 +3,14 @@
 from typing import Any, Dict
 
 import pandas as pd
-from ta.momentum import RSIIndicator
+from ta.momentum import RSIIndicator as _RSIIndicator
 
 from .base import BaseIndicator
 from .config import RSI_DEFAULT_PERIOD
 from .exceptions import IndicatorError
 
 
-class RSIIndicatorCustom(BaseIndicator):
+class RSIIndicator(BaseIndicator):
     """
     ■ RSIIndicatorCustom ■
     • RSI(Relative Strength Index)를 계산합니다.
@@ -52,7 +52,7 @@ class RSIIndicatorCustom(BaseIndicator):
                 indicator_name=self.indicator_name,
             )
 
-        rsi_obj = RSIIndicator(close=self.close, window=self.period)
+        rsi_obj = _RSIIndicator(close=self.close, window=self.period)
         rsi_series = rsi_obj.rsi()
         last_val = rsi_series.iloc[-1]
 
