@@ -38,13 +38,13 @@ class BaseIndicator(ABC):
         self.ohlcv: pd.DataFrame = ohlcv_df
 
     @abstractmethod
-    def calculate(self) -> Dict[str, Any]:
+    def calculate(self, full_series: bool = False) -> Dict[str, Any]:
         """
         하위 클래스에서 반드시 구현해야 하는 메서드입니다.
 
-        • 반환 타입: Dict[str, Any]
-          예시) {"rsi": 45.2} 또는 {"moving_average": {"sma_5": 123.4, ...}}
+        • full_series: bool, 전체 시계열을 함께 반환할지 여부 (기본 False)
+        • 반환 타입: Dict[str, Any] 예) {"moving_average": {"sma_5": 123.4, ...}}
         """
         raise NotImplementedError(
-            "하위 클래스에서 calculate() 메서드를 구현해야 합니다."
+            "하위 클래스에서 calculate(full_series: bool) 메서드를 구현해야 합니다."
         )
