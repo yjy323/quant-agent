@@ -17,8 +17,8 @@ class Config:
     TRADING_FEE_RATE = 0.0005  # 0.05%
 
     # Data Settings
-    DAILY_DATA_COUNT = 30
-    HOURLY_DATA_COUNT = 24
+    DAILY_DATA_COUNT = 60
+    HOURLY_DATA_COUNT = 60
 
     # AI Model Settings
     AI_MODEL = "gpt-4.1"

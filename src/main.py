@@ -54,8 +54,6 @@ class TradingBot:
 
             # 4. AI 결정 출력
             print(f"🎯 AI 결정: {ai_decision.get('decision', 'unknown').upper()}")
-            print(f"🔍 신뢰도: {ai_decision.get('confidence', 0)}%")
-            print(f"⚠️ 위험도: {ai_decision.get('risk_level', 'unknown')}")
             print(f"📝 근거: {ai_decision.get('reason', 'No reason provided')}")
 
             # 5. 거래 실행
