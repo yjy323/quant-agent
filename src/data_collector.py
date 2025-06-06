@@ -1,9 +1,16 @@
 from typing import Any
 
 import pyupbit  # type: ignore
-import ta  # type: ignore
 
 from config import Config
+
+# 새로운 지표 모듈 임포트
+from indicators.aggregator import IndicatorAggregator
+from indicators.bollinger import BollingerIndicator
+from indicators.exceptions import IndicatorError
+from indicators.macd import MACDIndicator
+from indicators.moving_average import MovingAverageIndicator
+from indicators.rsi import RSIIndicator
 
 
 class CryptoDataCollector:
@@ -82,65 +89,50 @@ class CryptoDataCollector:
                 return None
 
             return {
-                "market": orderbook[0]["market"],
-                "timestamp": orderbook[0]["timestamp"],
-                "total_ask_size": orderbook[0]["total_ask_size"],
-                "total_bid_size": orderbook[0]["total_bid_size"],
-                "top_5_orderbook": orderbook[0]["orderbook_units"][:5],
+                "market": orderbook["market"],
+                "timestamp": orderbook["timestamp"],
+                "total_ask_size": orderbook["total_ask_size"],
+                "total_bid_size": orderbook["total_bid_size"],
+                "top_5_orderbook": orderbook["orderbook_units"][:5],
             }
         except Exception as e:
             print(f"오더북 데이터 조회 중 오류 발생: {e}")
             return None
 
-    def _add_technical_indicators(self, df: Any) -> Any:
-        """기술적 지표 추가 (ta 라이브러리 사용)"""
+    def _calculate_technical_indicators(self, df: Any) -> dict[str, Any]:
+        """새로운 지표 계산 메서드 (기존 _add_technical_indicators 대체)"""
         try:
             if df is None or df.empty:
-                return df
+                print("지표 계산용 데이터가 비어있습니다.")
+                return {}
 
             # 데이터 유효성 검사
             required_columns = ["open", "high", "low", "close", "volume"]
             if not all(col in df.columns for col in required_columns):
                 print("필수 컬럼이 누락되었습니다.")
-                return df
+                return {}
 
-            # Moving Averages
-            df["SMA_10"] = ta.trend.sma_indicator(df["close"], window=10)
-            df["EMA_10"] = ta.trend.ema_indicator(df["close"], window=10)
+            # 지표 인스턴스 생성
+            indicators = [
+                MovingAverageIndicator(df),
+                RSIIndicator(df),
+                MACDIndicator(df),
+                BollingerIndicator(df),
+            ]
 
-            # RSI
-            df["RSI_14"] = ta.momentum.rsi(df["close"], window=14)
+            # 통합 계산 (full_series=False로 최신값만)
+            aggregator = IndicatorAggregator(indicators)
+            result = aggregator.aggregate(full_series=False)
 
-            # Stochastic Oscillator
-            df["STOCH_K"] = ta.momentum.stoch(
-                df["high"], df["low"], df["close"], window=14, smooth_window=3
-            )
-            df["STOCH_D"] = ta.momentum.stoch_signal(
-                df["high"], df["low"], df["close"], window=14, smooth_window=3
-            )
+            print(f"✅ 기술적 지표 계산 완료: {list(result.keys())}")
+            return dict(result)  # Ensure result is a dict[str, Any]
 
-            # MACD (ta 라이브러리 사용)
-            df["MACD"] = ta.trend.macd(df["close"], window_slow=26, window_fast=12)
-            df["MACD_Signal"] = ta.trend.macd_signal(
-                df["close"], window_slow=26, window_fast=12, window_sign=9
-            )
-            df["MACD_Histogram"] = ta.trend.macd_diff(
-                df["close"], window_slow=26, window_fast=12, window_sign=9
-            )
-
-            # Bollinger Bands
-            bollinger = ta.volatility.BollingerBands(
-                df["close"], window=20, window_dev=2
-            )
-            df["Upper_Band"] = bollinger.bollinger_hband()
-            df["Middle_Band"] = bollinger.bollinger_mavg()
-            df["Lower_Band"] = bollinger.bollinger_lband()
-
-            return df
-
+        except IndicatorError as e:
+            print(f"지표 계산 오류: {e}")
+            return {}
         except Exception as e:
-            print(f"기술적 지표 계산 중 오류 발생: {e}")
-            return df
+            print(f"지표 계산 중 예상치 못한 오류: {e}")
+            return {}
 
     def _get_ohlcv_data(self) -> dict:
         """OHLCV 데이터 수집 및 기술적 지표 추가"""
@@ -149,21 +141,33 @@ class CryptoDataCollector:
             df_daily = pyupbit.get_ohlcv(
                 self.ticker, interval="day", count=Config.DAILY_DATA_COUNT
             )
+            daily_indicators = {}
             if df_daily is not None and not df_daily.empty:
-                df_daily = self._add_technical_indicators(df_daily)
+                daily_indicators = self._calculate_technical_indicators(df_daily)
 
             # 시간봉 데이터
             df_hourly = pyupbit.get_ohlcv(
                 self.ticker, interval="minute60", count=Config.HOURLY_DATA_COUNT
             )
+            hourly_indicators = {}
             if df_hourly is not None and not df_hourly.empty:
-                df_hourly = self._add_technical_indicators(df_hourly)
+                hourly_indicators = self._calculate_technical_indicators(df_hourly)
 
-            return {"daily_ohlcv": df_daily, "hourly_ohlcv": df_hourly}
+            return {
+                "daily_ohlcv": df_daily,
+                "hourly_ohlcv": df_hourly,
+                "daily_indicators": daily_indicators,
+                "hourly_indicators": hourly_indicators,
+            }
 
         except Exception as e:
             print(f"OHLCV 데이터 수집 중 오류 발생: {e}")
-            return {"daily_ohlcv": None, "hourly_ohlcv": None}
+            return {
+                "daily_ohlcv": None,
+                "hourly_ohlcv": None,
+                "daily_indicators": {},
+                "hourly_indicators": {},
+            }
 
     def collect_all_data(self) -> dict | None:
         """모든 데이터 수집"""
