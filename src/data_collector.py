@@ -1,8 +1,13 @@
-from typing import Any
+# data_collector.py
+
+import json
+from datetime import datetime
+from typing import Any, cast
 
 import pyupbit  # type: ignore
 
 from config import Config
+from fear_greed_collector import FearGreedDataCollector
 
 # 새로운 지표 모듈 임포트
 from indicators.aggregator import IndicatorAggregator
@@ -17,8 +22,9 @@ class CryptoDataCollector:
     def __init__(self, upbit: Any) -> None:
         self.ticker: str = Config.TICKER
         self.upbit = upbit
+        self.fear_greed_collector = FearGreedDataCollector()
 
-    def _get_investment_status(self) -> dict | None:
+    def _get_investment_status(self) -> dict[str, Any] | None:
         """현재 투자 상태 조회"""
         try:
             balances = self.upbit.get_balances()
@@ -169,18 +175,55 @@ class CryptoDataCollector:
                 "hourly_indicators": {},
             }
 
-    def collect_all_data(self) -> dict | None:
-        """모든 데이터 수집"""
+    def _format_ohlcv_for_ai(self, df: Any) -> dict | None:
+        """OHLCV DataFrame을 AI가 이해할 수 있는 JSON 형태로 변환"""
         try:
-            investment_status = self._get_investment_status()
-            orderbook_data = self._get_orderbook_data()
-            ohlcv_data = self._get_ohlcv_data()
+            if df is None or df.empty:
+                return None
 
-            return {
-                "investment_status": investment_status,
-                "orderbook": orderbook_data,
-                "market_data": ohlcv_data,
-            }
+            # 최근 5개 데이터만 선택하여 JSON 변환
+            recent_data = df.tail(5).to_json(orient="index", date_format="iso")
+            return cast(dict[str, Any], json.loads(recent_data))
         except Exception as e:
-            print(f"전체 데이터 수집 중 오류 발생: {e}")
+            print(f"OHLCV 데이터 포맷팅 오류: {e}")
             return None
+
+    def collect_all_data(self) -> str:
+        """
+        모든 데이터 수집 및 AI 분석용 JSON 문자열 반환
+
+        Returns:
+            str: AI가 분석할 수 있는 JSON 형식의 문자열
+        """
+        print("📡 데이터 수집 중...")
+
+        # 1. 기본 데이터 수집
+        investment_status = self._get_investment_status()
+        orderbook_data = self._get_orderbook_data()
+        ohlcv_data = self._get_ohlcv_data()
+
+        # 2. 공포탐욕지수 데이터 수집
+        fear_greed_data = self.fear_greed_collector.collect_fear_greed_data()
+
+        # 3. AI용 OHLCV 데이터 포맷팅
+        daily_ohlcv_formatted = self._format_ohlcv_for_ai(ohlcv_data["daily_ohlcv"])
+        hourly_ohlcv_formatted = self._format_ohlcv_for_ai(ohlcv_data["hourly_ohlcv"])
+
+        # 4. AI 분석용 최종 데이터 구성
+        ai_formatted_data = {
+            "analysis_timestamp": datetime.now().isoformat(),
+            "investment_status": investment_status,
+            "orderbook": orderbook_data,
+            "market_data": {
+                "daily_ohlcv_recent": daily_ohlcv_formatted,
+                "hourly_ohlcv_recent": hourly_ohlcv_formatted,
+                "daily_indicators": ohlcv_data["daily_indicators"],
+                "hourly_indicators": ohlcv_data["hourly_indicators"],
+            },
+            "fear_greed_index": fear_greed_data,
+        }
+
+        # 5. JSON 문자열로 변환하여 반환
+        json_data = json.dumps(ai_formatted_data, ensure_ascii=False, indent=2)
+        print("✅ AI용 데이터 포맷팅 완료")
+        return json_data

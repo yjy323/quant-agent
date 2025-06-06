@@ -178,44 +178,39 @@ class FearGreedDataCollector:
         Returns:
             Dict[str, Any]: AI Agent가 활용할 수 있는 구조화된 공포탐욕지수 데이터
         """
-        try:
-            print("📊 공포탐욕지수 데이터 수집 중...")
+        print("📊 공포탐욕지수 데이터 수집 중...")
 
-            # API 요청
-            raw_response = self._make_api_request(limit=self.DEFAULT_LIMIT)
+        # API 요청
+        raw_response = self._make_api_request(limit=self.DEFAULT_LIMIT)
 
-            # 데이터 가공
-            processed_data = self._process_fear_greed_data(raw_response["data"])
+        # 데이터 가공
+        processed_data = self._process_fear_greed_data(raw_response["data"])
 
-            if not processed_data:
-                raise Exception("처리된 데이터가 없습니다")
+        if not processed_data:
+            raise Exception("처리된 데이터가 없습니다")
 
-            # 트렌드 분석
-            trend_analysis = self._calculate_trend_analysis(processed_data)
+        # 트렌드 분석
+        trend_analysis = self._calculate_trend_analysis(processed_data)
 
-            # 최종 결과 구성
-            result = {
-                "collection_timestamp": datetime.now(timezone.utc).isoformat(),
-                "data_source": "alternative.me",
-                "period_days": len(processed_data),
-                "current_index": {
-                    "value": processed_data[0]["value"],
-                    "classification": processed_data[0]["classification"],
-                    "date": processed_data[0]["date"],
-                },
-                "historical_data": processed_data,
-                "trend_analysis": trend_analysis,
-                "market_sentiment_summary": self._generate_sentiment_summary(
-                    processed_data[0], trend_analysis
-                ),
-            }
+        # 최종 결과 구성
+        result = {
+            "collection_timestamp": datetime.now(timezone.utc).isoformat(),
+            "data_source": "alternative.me",
+            "period_days": len(processed_data),
+            "current_index": {
+                "value": processed_data[0]["value"],
+                "classification": processed_data[0]["classification"],
+                "date": processed_data[0]["date"],
+            },
+            "historical_data": processed_data,
+            "trend_analysis": trend_analysis,
+            "market_sentiment_summary": self._generate_sentiment_summary(
+                processed_data[0], trend_analysis
+            ),
+        }
 
-            print(f"✅ 공포탐욕지수 데이터 수집 완료: {len(processed_data)}일간 데이터")
-            return result
-
-        except Exception as e:
-            print(f"❌ 공포탐욕지수 데이터 수집 실패: {e}")
-            return self._get_fallback_data()
+        print(f"✅ 공포탐욕지수 데이터 수집 완료: {len(processed_data)}일간 데이터")
+        return result
 
     def _generate_sentiment_summary(
         self, current_data: Dict[str, Any], trend_analysis: Dict[str, Any]
@@ -245,35 +240,6 @@ class FearGreedDataCollector:
             summary += f"지난 7일간 횡보 상태로 {consecutive}일 연속 유지"
 
         return summary
-
-    def _get_fallback_data(self) -> Dict[str, Any]:
-        """
-        API 요청 실패 시 사용할 기본 데이터
-
-        Returns:
-            Dict[str, Any]: 기본 응답 데이터
-        """
-        return {
-            "collection_timestamp": datetime.now(timezone.utc).isoformat(),
-            "data_source": "fallback",
-            "period_days": 0,
-            "current_index": {
-                "value": 50,
-                "classification": "Neutral",
-                "date": datetime.now().strftime("%Y-%m-%d"),
-            },
-            "historical_data": [],
-            "trend_analysis": {
-                "trend_direction": "unknown",
-                "trend_strength": 0,
-                "average_7d": 50,
-                "volatility": 0,
-                "consecutive_days": 0,
-                "current_vs_average": 0,
-            },
-            "market_sentiment_summary": "API 데이터 수집 실패로 중립 상태로 가정",
-            "error": "Fear & Greed Index API 접근 불가",
-        }
 
     def __del__(self) -> None:
         """소멸자: 세션 정리"""
