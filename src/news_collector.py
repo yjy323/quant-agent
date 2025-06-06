@@ -1,20 +1,18 @@
 # news_collector.py
 
-import os
 from datetime import datetime, timezone
 from typing import Any, Dict
 
 import serpapi
-from dotenv import load_dotenv
 
-load_dotenv()
+from config import Config
 
 
 class NewsCollector:
     """비트코인 뉴스 수집 클래스"""
 
     def __init__(self) -> None:
-        api_key = os.getenv("SERPAPI_KEY")
+        api_key = Config.SERPAPI_KEY
         if not api_key:
             raise ValueError("SERPAPI_KEY 환경변수가 설정되지 않았습니다.")
 

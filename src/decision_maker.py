@@ -83,7 +83,7 @@ Respond in JSON format:
                 {
                     "role": "user",
                     "content": f"다음 데이터를 분석하여 투자 결정을 내려주세요. "
-                    f"기술적 지표와 공포탐욕지수를 종합적으로 고려하세요:\n\n{ai_formatted_data}",
+                    f"기술적 지표와 공포탐욕지수, 뉴스를 종합적으로 고려하세요:\n\n{ai_formatted_data}",
                 },
             ],
             response_format={"type": "json_object"},

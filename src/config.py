@@ -10,6 +10,7 @@ class Config:
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
     UPBIT_ACCESS_KEY = os.getenv("UPBIT_ACCESS_KEY")
     UPBIT_SECRET_KEY = os.getenv("UPBIT_SECRET_KEY")
+    SERPAPI_KEY = os.getenv("SERPAPI_KEY")
 
     # Trading Settings
     TICKER = "KRW-BTC"

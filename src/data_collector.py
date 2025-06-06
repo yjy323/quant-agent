@@ -1,4 +1,4 @@
-# data_collector.py
+# data_collector.py (뉴스 기능 통합)
 
 import json
 from datetime import datetime
@@ -16,6 +16,7 @@ from indicators.exceptions import IndicatorError
 from indicators.macd import MACDIndicator
 from indicators.moving_average import MovingAverageIndicator
 from indicators.rsi import RSIIndicator
+from news_collector import NewsCollector  # 새로 추가
 
 
 class CryptoDataCollector:
@@ -23,6 +24,7 @@ class CryptoDataCollector:
         self.ticker: str = Config.TICKER
         self.upbit = upbit
         self.fear_greed_collector = FearGreedDataCollector()
+        self.news_collector = NewsCollector()  # 뉴스 수집기 추가
 
     def _get_investment_status(self) -> dict[str, Any] | None:
         """현재 투자 상태 조회"""
@@ -188,6 +190,20 @@ class CryptoDataCollector:
             print(f"OHLCV 데이터 포맷팅 오류: {e}")
             return None
 
+    def _collect_news_data(self) -> dict[str, Any]:
+        """뉴스 데이터 수집 (새로 추가)"""
+        try:
+            news_data = self.news_collector.collect_bitcoin_news()
+            return cast(dict[str, Any], news_data)
+        except Exception as e:
+            print(f"뉴스 데이터 수집 중 오류 발생: {e}")
+            # 뉴스 수집 실패 시 빈 데이터 반환
+            return {
+                "collection_timestamp": datetime.now().isoformat(),
+                "final_count": 0,
+                "news_articles": [],
+            }
+
     def collect_all_data(self) -> str:
         """
         모든 데이터 수집 및 AI 분석용 JSON 문자열 반환
@@ -205,11 +221,14 @@ class CryptoDataCollector:
         # 2. 공포탐욕지수 데이터 수집
         fear_greed_data = self.fear_greed_collector.collect_fear_greed_data()
 
-        # 3. AI용 OHLCV 데이터 포맷팅
+        # 3. 뉴스 데이터 수집 (새로 추가)
+        news_data = self._collect_news_data()
+
+        # 4. AI용 OHLCV 데이터 포맷팅
         daily_ohlcv_formatted = self._format_ohlcv_for_ai(ohlcv_data["daily_ohlcv"])
         hourly_ohlcv_formatted = self._format_ohlcv_for_ai(ohlcv_data["hourly_ohlcv"])
 
-        # 4. AI 분석용 최종 데이터 구성
+        # 5. AI 분석용 최종 데이터 구성
         ai_formatted_data = {
             "analysis_timestamp": datetime.now().isoformat(),
             "investment_status": investment_status,
@@ -221,9 +240,10 @@ class CryptoDataCollector:
                 "hourly_indicators": ohlcv_data["hourly_indicators"],
             },
             "fear_greed_index": fear_greed_data,
+            "news_analysis": news_data,  # 뉴스 데이터 추가
         }
 
-        # 5. JSON 문자열로 변환하여 반환
+        # 6. JSON 문자열로 변환하여 반환
         json_data = json.dumps(ai_formatted_data, ensure_ascii=False, indent=2)
         print("✅ AI용 데이터 포맷팅 완료")
         return json_data
