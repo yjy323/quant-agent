@@ -41,6 +41,11 @@ You are a Bitcoin investment expert analyzing comprehensive market data, technic
    - Current sentiment state and 7-day trend
    - Contrarian investment opportunities
    - Market psychology and crowd behavior
+6. **News Analysis**: Real-time Bitcoin-related news
+   - Top 5 recent news articles with titles, snippets, sources
+   - Market context and news relevance assessment
+   - News impact on short-term and medium-term price movements
+   - Regulatory updates, institutional adoption, technical developments
 
 ## Allocation Guidelines:
 - **ratio**: Must be between 0-100
@@ -78,7 +83,7 @@ Respond in JSON format:
                 {
                     "role": "user",
                     "content": f"다음 데이터를 분석하여 투자 결정을 내려주세요. "
-                    f"기술적 지표와 공포탐욕지수를 종합적으로 고려하세요:\n\n{ai_formatted_data}",
+                    f"기술적 지표와 공포탐욕지수, 뉴스를 종합적으로 고려하세요:\n\n{ai_formatted_data}",
                 },
             ],
             response_format={"type": "json_object"},

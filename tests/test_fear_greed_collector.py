@@ -23,7 +23,3 @@ def test_fear_greed_data_collection():
     # pytest용 기본 검증
     assert result is not None
     assert isinstance(result, dict)
-
-
-if __name__ == "__main__":
-    test_fear_greed_data_collection()
