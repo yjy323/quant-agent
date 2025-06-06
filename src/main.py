@@ -1,3 +1,5 @@
+# main.py (Final Refactored Version)
+
 import time
 from datetime import datetime
 from typing import Any, Dict
@@ -37,50 +39,44 @@ class TradingBot:
 
     def run_single_cycle(self) -> None:
         """단일 거래 사이클 실행"""
-        try:
-            # 1. 데이터 수집
-            print("📡 데이터 수집 중...")
-            collected_data = self.crypto_data_collector.collect_all_data()
-            if not collected_data or not collected_data.get("investment_status"):
-                print("❌ 데이터 수집 실패. 사이클 종료.")
-                return
+        # 1. 데이터 수집 및 AI용 포맷팅
+        print("📡 데이터 수집 중...")
+        ai_formatted_data = self.crypto_data_collector.collect_all_data()
 
-            # 2. 현재 상태 출력
-            self.print_status(collected_data["investment_status"])
+        # 2. 상태 출력
+        status_data = self.crypto_data_collector._get_investment_status()
+        if status_data:
+            self.print_status(status_data)
 
-            # 3. AI 분석
-            print("🤖 AI 분석 중...")
-            ai_decision = self.decision_maker.analyze(collected_data)
+        # 3. AI 분석
+        print("🤖 AI 분석 중...")
+        ai_decision = self.decision_maker.analyze(ai_formatted_data)
 
-            # 4. AI 결정 출력
-            print(f"🎯 AI 결정: {ai_decision.get('decision', 'unknown').upper()}")
-            print(f"📝 근거: {ai_decision.get('reason', 'No reason provided')}")
+        # 4. AI 결정 출력
+        print(f"🎯 AI 결정: {ai_decision.get('decision', 'unknown').upper()}")
 
-            # 5. 거래 실행
-            print("\n💼 거래 실행...")
-            self.trader.execute_decision(ai_decision)
+        ratio = ai_decision.get("ratio", 0)
+        if ratio > 0:
+            action_type = "투자" if ai_decision.get("decision") == "buy" else "매도"
+            print(f"📊 {action_type} 비율: {ratio}%")
 
-        except Exception as e:
-            print(f"❌ 거래 사이클 오류: {e}")
+        print(f"📝 근거: {ai_decision.get('reason', 'No reason provided')}")
+
+        # 5. 거래 실행
+        print("\n💼 거래 실행...")
+        self.trader.execute_decision(ai_decision)
 
     def run(self) -> None:
         """메인 실행 루프"""
         print("🚀 비트코인 AI 자동매매 봇 시작")
         print(f"🔄 거래 간격: {Config.TRADING_INTERVAL_SECONDS}초")
+        print("-" * 60)
 
         while True:
-            try:
-                self.run_single_cycle()
-                print(f"\n⏰ {Config.TRADING_INTERVAL_SECONDS}초 대기 중...")
-                time.sleep(Config.TRADING_INTERVAL_SECONDS)
-
-            except KeyboardInterrupt:
-                print("\n🛑 프로그램 종료")
-                break
-            except Exception as e:
-                print(f"❌ 메인 루프 오류: {e}")
-                print(f"⏰ {Config.TRADING_INTERVAL_SECONDS}초 후 재시도...")
-                time.sleep(Config.TRADING_INTERVAL_SECONDS)
+            self.run_single_cycle()
+            print(f"\n⏰ {Config.TRADING_INTERVAL_SECONDS}초 대기 중...")
+            print("-" * 60)
+            time.sleep(Config.TRADING_INTERVAL_SECONDS)
 
 
 if __name__ == "__main__":
