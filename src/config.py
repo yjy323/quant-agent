@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -33,3 +34,12 @@ class Config:
     # CHROME_DRIVER_PATH = "/usr/local/bin/chromedriver" # 필요시 주석 해제 및 경로 설정
     SELENIUM_HEADLESS = True  # True로 설정하면 GUI 없이 백그라운드에서 실행
     SELENIUM_TIMEOUT = 10  # Selenium 요소 탐색 타임아웃
+
+    # Chart Image Storage Settings
+    CHART_IMAGES_DIR = Path("data/encoded_images")
+    CHART_IMAGE_FILENAME_FORMAT = "chart_{symbol}_{timeframe}_{timestamp}.txt"
+
+    @classmethod
+    def ensure_chart_images_dir(cls) -> Path:
+        cls.CHART_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
+        return cls.CHART_IMAGES_DIR

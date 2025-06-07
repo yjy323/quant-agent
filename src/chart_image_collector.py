@@ -6,7 +6,8 @@ import time
 from dataclasses import asdict, dataclass
 from datetime import datetime
 from enum import Enum
-from typing import Any, Dict, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from PIL import Image
 from selenium import webdriver
@@ -45,15 +46,20 @@ class ChartImageMetadata:
 
 class ChartImageCollector:
     """
-    업비트 차트 이미지를 Selenium으로 수집하고 전처리하는 클래스
+    업비트 차트 이미지를 Selenium으로 수집하고 로컬에 저장하는 클래스
     60초 간격 매매를 위한 고속 차트 캡처 최적화
     """
 
     def __init__(self) -> None:
         self.driver: Optional[webdriver.Chrome] = None
-        self.wait: WebDriverWait = WebDriverWait(self.driver, Config.SELENIUM_TIMEOUT)
+        self.wait: Optional[WebDriverWait] = None
         self.page_loaded: bool = False
         self.upbit_chart_url: str = Config.UPBIT_CHART_URL
+        self.selenium_timeout: int = Config.SELENIUM_TIMEOUT
+
+        # 차트 이미지 저장 디렉토리 초기화
+        self.chart_images_dir = Config.ensure_chart_images_dir()
+
         self._initialize_driver()
 
     def _initialize_driver(self) -> None:
@@ -80,7 +86,8 @@ class ChartImageCollector:
                 )
 
                 self.driver = webdriver.Chrome(options=options)
-                self.driver.set_page_load_timeout(Config.SELENIUM_TIMEOUT)
+                self.driver.set_page_load_timeout(self.selenium_timeout)
+                self.wait = WebDriverWait(self.driver, self.selenium_timeout)
                 print("✅ WebDriver 초기화 완료.")
             except WebDriverException as e:
                 print(f"❌ WebDriver 초기화 실패: {e}")
@@ -89,7 +96,7 @@ class ChartImageCollector:
 
     def load_page(self) -> bool:
         """업비트 차트 페이지를 로드하고 주요 요소가 나타날 때까지 대기합니다."""
-        if self.driver is None:
+        if self.driver is None or self.wait is None:
             print("❌ WebDriver가 초기화되지 않았습니다. 페이지를 로드할 수 없습니다.")
             return False
 
@@ -139,7 +146,7 @@ class ChartImageCollector:
 
     def _set_1minute_timeframe(self) -> bool:
         """차트 주기를 1분봉으로 설정합니다."""
-        if not self.page_loaded or self.driver is None:
+        if not self.page_loaded or self.driver is None or self.wait is None:
             print("❌ 페이지가 로드되지 않아 1분봉 설정 불가.")
             return False
 
@@ -153,8 +160,10 @@ class ChartImageCollector:
 
             one_min_option = self.wait.until(
                 EC.element_to_be_clickable(
-                    By.XPATH,
-                    "//div[contains(@class, 'ciq-dropdowns')]//cq-menu[contains(@class, 'ciq-period')]//cq-item[.//translate[text()='1분']]",  # noqa: E501
+                    (
+                        By.XPATH,
+                        "//div[contains(@class, 'ciq-dropdowns')]//cq-menu[contains(@class, 'ciq-period')]//cq-item[.//translate[text()='1분']]",  # noqa: E501
+                    )
                 )
             )
             ActionChains(self.driver).move_to_element(one_min_option).click().perform()
@@ -175,7 +184,7 @@ class ChartImageCollector:
 
     def _capture_chart_area(self) -> Optional[bytes]:
         """지정된 차트 영역을 캡처하고 PNG 바이트로 반환합니다."""
-        if not self.page_loaded or self.driver is None:
+        if not self.page_loaded or self.driver is None or self.wait is None:
             print("❌ 페이지가 로드되지 않아 차트 영역 캡처 불가.")
             return None
 
@@ -207,7 +216,7 @@ class ChartImageCollector:
         제공된 HTML 구조를 기반으로 정확하게 파싱합니다.
         """
         price_info: Dict[str, Any] = {}
-        if not self.page_loaded or self.driver is None:
+        if not self.page_loaded or self.driver is None or self.wait is None:
             print("❌ 페이지가 로드되지 않아 가격 정보 추출 불가.")
             return price_info
 
@@ -242,11 +251,54 @@ class ChartImageCollector:
 
         return price_info
 
+    def _generate_chart_filename(self, timestamp: datetime) -> str:
+        """차트 이미지 파일명을 생성합니다."""
+        # Config에서 정의한 형식을 사용하여 파일명 생성
+        symbol_clean = Config.TICKER.replace("-", "")  # KRW-BTC -> KRWBTC
+
+        format_vars = {
+            "symbol": symbol_clean,
+            "timeframe": "1m",
+            "timestamp": timestamp.strftime("%Y%m%d_%H%M%S_%f")[:-3],  # 밀리초까지만
+            "date": timestamp.strftime("%Y%m%d"),
+            "time": timestamp.strftime("%H%M%S"),
+        }
+
+        filename: str = Config.CHART_IMAGE_FILENAME_FORMAT.format(**format_vars)
+        return filename
+
+    def _save_chart_image(
+        self, image_bytes: bytes, timestamp: datetime
+    ) -> Optional[Path]:
+        """차트 이미지의 base64 문자열을 텍스트 파일로 저장합니다."""
+        try:
+            # 파일명 생성 (확장자를 .txt로 변경)
+            filename = self._generate_chart_filename(timestamp)
+            filename = filename.replace(".png", ".txt")  # 확장자 변경
+            file_path = self.chart_images_dir / filename
+
+            # base64 인코딩
+            encoded_image_string = base64.b64encode(image_bytes).decode("utf-8")
+
+            # base64 문자열을 텍스트 파일로 저장
+            with open(file_path, "w", encoding="utf-8") as f:
+                f.write(encoded_image_string)
+
+            print(f"💾 차트 이미지 base64 파일 저장 완료: {file_path}")
+            from typing import Optional, cast
+
+            return cast(Optional[Path], file_path)
+
+        except Exception as e:
+            print(f"❌ 차트 이미지 base64 파일 저장 실패: {e}")
+            return None
+
     def collect_1m_chart(self) -> Optional[Dict[str, Any]]:
         """
-        업비트 BTC/KRW 1분봉 차트 이미지를 캡처하고 메타데이터를 추출합니다.
+        업비트 BTC/KRW 1분봉 차트 이미지를 캡처하고 base64를 파일로 저장합니다.
         """
         start_time = time.time()
+        timestamp = datetime.now()
         print("🚀 1분봉 차트 및 메타데이터 수집 시작...")
 
         try:
@@ -263,13 +315,15 @@ class ChartImageCollector:
                 print("❌ 차트 이미지 캡처 실패, 차트 수집 중단.")
                 return None
 
+            # base64 문자열을 파일로 저장
+            saved_file_path = self._save_chart_image(chart_image_bytes, timestamp)
+            if saved_file_path is None:
+                print("❌ 차트 이미지 base64 파일 저장 실패, 차트 수집 중단.")
+                return None
+
+            # 이미지 크기 정보 추출
             image_buffer = io.BytesIO(chart_image_bytes)
             img = Image.open(image_buffer)
-
-            buffered = io.BytesIO()
-            img.save(buffered, format="PNG")
-            encoded_image_string = base64.b64encode(buffered.getvalue()).decode("utf-8")
-
             image_width, image_height = img.size
             image_size_info = {"width": image_width, "height": image_height}
 
@@ -279,8 +333,8 @@ class ChartImageCollector:
             capture_duration_ms = int((end_time - start_time) * 1000)
 
             metadata = ChartImageMetadata(
-                image_id=f"chart_{datetime.now().strftime('%Y%m%d%H%M%S%f')}",
-                timestamp=datetime.now().isoformat(),
+                image_id=f"chart_{timestamp.strftime('%Y%m%d%H%M%S%f')}",
+                timestamp=timestamp.isoformat(),
                 chart_type=ChartType.CANDLESTICK,
                 timeframe="1m",
                 symbol=Config.TICKER,
@@ -291,7 +345,8 @@ class ChartImageCollector:
 
             print(f"✅ 1분봉 차트 및 메타데이터 수집 완료 ({capture_duration_ms}ms)")
             return {
-                "chart_image_base64": encoded_image_string,
+                "chart_file_path": str(saved_file_path.absolute()),
+                "chart_file_name": saved_file_path.name,
                 "metadata": asdict(metadata),
             }
 
@@ -322,6 +377,34 @@ class ChartImageCollector:
             print(f"❌ 차트 새로고침 실패: {e}")
             return False
 
+    def get_chart_files_list(self) -> List[Dict[str, Any]]:
+        """저장된 차트 파일 목록을 반환합니다."""
+        try:
+            chart_files = list(
+                self.chart_images_dir.glob("chart_*.txt")
+            )  # txt 파일로 변경
+            chart_files.sort(key=lambda x: x.stat().st_mtime, reverse=True)
+
+            files_info = []
+            for file_path in chart_files:
+                stat_info = file_path.stat()
+                files_info.append(
+                    {
+                        "file_name": file_path.name,
+                        "file_path": str(file_path.absolute()),
+                        "file_size": stat_info.st_size,
+                        "created_time": datetime.fromtimestamp(
+                            stat_info.st_mtime
+                        ).isoformat(),
+                    }
+                )
+
+            return files_info
+
+        except Exception as e:
+            print(f"❌ 차트 파일 목록 조회 실패: {e}")
+            return []
+
     def close_driver(self) -> None:
         """WebDriver 정리"""
         try:
@@ -350,18 +433,16 @@ if __name__ == "__main__":
         if result:
             print("\n--- 차트 수집 결과 ---")
             print("✅ 차트 수집 성공!")
+            # 기존 테스트용 저장 로직 제거
+            print(f"저장된 파일: {result['chart_file_path']}")
+            print(f"파일명: {result['chart_file_name']}")
             print(f"메타데이터: {result['metadata']}")
 
-            if "chart_image_base64" in result:
-                try:
-                    img_data = base64.b64decode(result["chart_image_base64"])
-                    with open("captured_chart.png", "wb") as f:
-                        f.write(img_data)
-                    print(
-                        "➡️ 캡처된 차트 이미지가 'captured_chart.png'로 저장되었습니다."
-                    )
-                except Exception as e:
-                    print(f"❌ 캡처 이미지 파일 저장 실패: {e}")
+            # 저장된 파일 목록 확인
+            files_list = collector.get_chart_files_list()
+            print(f"\n--- 저장된 차트 파일 목록 ({len(files_list)}개) ---")
+            for file_info in files_list[:5]:  # 최근 5개만 출력
+                print(f"📁 {file_info['file_name']} ({file_info['file_size']} bytes)")
 
         else:
             print("❌ 차트 수집 실패.")
