@@ -1,4 +1,4 @@
-# main.py (Final Refactored Version)
+# main.py
 
 import time
 from datetime import datetime
@@ -6,6 +6,7 @@ from typing import Any, Dict
 
 import pyupbit  # type: ignore
 
+from chart_image_collector import ChartImageCollector
 from config import Config
 from data_collector import CryptoDataCollector
 from decision_maker import DecisionMaker
@@ -18,6 +19,7 @@ class TradingBot:
         self.crypto_data_collector = CryptoDataCollector(self.upbit)
         self.decision_maker = DecisionMaker()
         self.trader = Trader(self.upbit)
+        self.chart_collector = ChartImageCollector()
 
     def print_status(self, investment_status: Dict[str, Any]) -> None:
         """현재 상태 출력"""
@@ -39,20 +41,25 @@ class TradingBot:
 
     def run_single_cycle(self) -> None:
         """단일 거래 사이클 실행"""
-        # 1. 데이터 수집 및 AI용 포맷팅
-        print("📡 데이터 수집 중...")
+        # 1. 수치 데이터 수집
+        print("📡 수치 데이터 수집 중...")
         ai_formatted_data = self.crypto_data_collector.collect_all_data()
 
-        # 2. 상태 출력
+        # 2. 차트 이미지 수집
+        print("📸 차트 이미지 수집 중...")
+        chart_result = self.chart_collector.collect_1m_chart()
+        chart_file_path = chart_result["chart_file_path"] if chart_result else None
+
+        # 3. 상태 출력
         status_data = self.crypto_data_collector._get_investment_status()
         if status_data:
             self.print_status(status_data)
 
-        # 3. AI 분석
-        print("🤖 AI 분석 중...")
-        ai_decision = self.decision_maker.analyze(ai_formatted_data)
+        # 4. AI 분석
+        print("🤖 AI 분석 중 (수치 데이터 + 차트 이미지)...")
+        ai_decision = self.decision_maker.analyze(ai_formatted_data, chart_file_path)
 
-        # 4. AI 결정 출력
+        # 5. AI 결정 출력
         print(f"🎯 AI 결정: {ai_decision.get('decision', 'unknown').upper()}")
 
         ratio = ai_decision.get("ratio", 0)
@@ -62,7 +69,7 @@ class TradingBot:
 
         print(f"📝 근거: {ai_decision.get('reason', 'No reason provided')}")
 
-        # 5. 거래 실행
+        # 6. 거래 실행
         print("\n💼 거래 실행...")
         self.trader.execute_decision(ai_decision)
 
