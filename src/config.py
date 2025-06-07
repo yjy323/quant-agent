@@ -36,10 +36,15 @@ class Config:
     SELENIUM_TIMEOUT = 10  # Selenium 요소 탐색 타임아웃
 
     # Chart Image Storage Settings
-    CHART_IMAGES_DIR = Path("data/encoded_images")
+    CHART_IMAGES_DIR = Path("data/chart_images")
     CHART_IMAGE_FILENAME_FORMAT = "chart_{symbol}_{timeframe}_{timestamp}.txt"
+
+    # Chart Image Analysis Settings
+    CHART_ANALYSIS_MODEL = "gpt-4.1-mini"
+    CHART_ANALYSIS_MAX_TOKENS = 1000
 
     @classmethod
     def ensure_chart_images_dir(cls) -> Path:
+        """차트 이미지 저장 디렉토리가 존재하지 않으면 생성"""
         cls.CHART_IMAGES_DIR.mkdir(parents=True, exist_ok=True)
         return cls.CHART_IMAGES_DIR
