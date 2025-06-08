@@ -32,16 +32,20 @@ class Config:
     # Selenium Settings
     UPBIT_CHART_URL = "https://upbit.com/exchange?code=CRIX.UPBIT.KRW-BTC"
     # CHROME_DRIVER_PATH = "/usr/local/bin/chromedriver" # 필요시 주석 해제 및 경로 설정
-    SELENIUM_HEADLESS = True  # True로 설정하면 GUI 없이 백그라운드에서 실행
+    SELENIUM_HEADLESS = False  # True로 설정하면 GUI 없이 백그라운드에서 실행
     SELENIUM_TIMEOUT = 10  # Selenium 요소 탐색 타임아웃
 
     # Chart Image Storage Settings
-    CHART_IMAGES_DIR = Path("data/chart_images")
+    CHART_IMAGES_DIR = Path("data/encoded_chart_images")
     CHART_IMAGE_FILENAME_FORMAT = "chart_{symbol}_{timeframe}_{timestamp}.txt"
 
     # Chart Image Analysis Settings
     CHART_ANALYSIS_MODEL = "gpt-4.1-mini"
     CHART_ANALYSIS_MAX_TOKENS = 1000
+
+    # YouTube Analysis Settings
+    YOUTUBE_ANALYSIS_MODEL = "gpt-4.1-mini"
+    YOUTUBE_ANALYSIS_MAX_TOKENS = 1000
 
     @classmethod
     def ensure_chart_images_dir(cls) -> Path:
