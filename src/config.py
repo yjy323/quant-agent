@@ -43,6 +43,10 @@ class Config:
     CHART_ANALYSIS_MODEL = "gpt-4.1-mini"
     CHART_ANALYSIS_MAX_TOKENS = 1000
 
+    # YouTube Analysis Settings
+    YOUTUBE_ANALYSIS_MODEL = "gpt-4.1-mini"
+    YOUTUBE_ANALYSIS_MAX_TOKENS = 1000
+
     @classmethod
     def ensure_chart_images_dir(cls) -> Path:
         """차트 이미지 저장 디렉토리가 존재하지 않으면 생성"""
