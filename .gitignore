@@ -2,7 +2,12 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=venv,python,macos
 
 ### Personal ###
-data/*
+static/*
+!static/.gitkeep
+
+db/*
+!db/.gitkeep
+
 
 ### macOS ###
 # General
