@@ -1,4 +1,4 @@
-# decision_maker.py (Updated with YouTube Analysis)
+# decision_maker.py
 
 import json
 from typing import Any, Optional, cast
@@ -134,25 +134,30 @@ Respond in JSON format:
             }
 
     def _analyze_youtube_captions(self, youtube_data: dict[str, Any]) -> dict[str, Any]:
-        """YouTube captions analysis"""
+        """YouTube 다중 영상 자막 분석 (전체 자막 사용)"""
         try:
-            video = youtube_data.get("video", {})
+            videos = youtube_data.get("videos", [])
+            valid_videos = [
+                {
+                    "video_id": v.get("video_id"),
+                    "title": v.get("title"),
+                    "channel": v.get("channel"),
+                    "transcript": v.get("transcript_text", "").strip(),
+                }
+                for v in videos
+                if v.get("has_transcript") and v.get("transcript_text", "").strip()
+            ]
 
-            if (
-                not video.get("has_transcript", False)
-                or not video.get("transcript_text", "").strip()
-            ):
-                print("📺 No YouTube transcript available for analysis")
+            if not valid_videos:
+                print("📺 분석 가능한 YouTube 자막이 없음")
                 return {
                     "overall_sentiment": "neutral",
                     "confidence": 0,
                     "key_points": [],
-                    "summary": "No YouTube transcript available for analysis",
+                    "summary": "No valid YouTube transcripts for analysis",
                 }
 
-            print("📺 Analyzing YouTube transcript...")
-
-            transcript_text = video["transcript_text"][:5000]  # Limit length
+            print(f"📺 {len(valid_videos)}개의 YouTube 자막 분석 중...")
 
             response = self.client.chat.completions.create(
                 model=self.youtube_model,
@@ -160,29 +165,31 @@ Respond in JSON format:
                     {
                         "role": "user",
                         "content": f"""
-Analyze the following YouTube Bitcoin/cryptocurrency analysis video transcript:
+You are analyzing recent Bitcoin market sentiment from multiple YouTube analyst videos.
 
-Channel: {video['channel']}
-Title: {video['title']}
+Each item contains:
+- video_id
+- title
+- channel
+- transcript
 
-Transcript:
-{transcript_text}
+Please analyze the collection and return:
+1. **Overall Sentiment**: bullish | bearish | neutral
+2. **Confidence Score** (1-10): Your confidence in your judgment
+3. **Key Points** (3-5): Notable predictions, opinions, or consensus across videos
+4. **Summary**: One-line summary capturing collective sentiment
 
-Based on this content, provide analysis on:
-
-1. **Overall Market Sentiment**: bullish/bearish/neutral
-2. **Confidence Score** (1-10): Based on analysis quality, specificity, and expertise
-3. **Key Points** (3-5): Important investment insights, price predictions, technical analysis
-4. **Summary**: One-line overview of the YouTube analysis
+Videos:
+{json.dumps(valid_videos, ensure_ascii=False, indent=2)}
 
 Respond in JSON format:
 {{
     "overall_sentiment": "bullish|bearish|neutral",
     "confidence": 1-10,
     "key_points": ["point1", "point2", "point3"],
-    "summary": "YouTube analysis summary"
+    "summary": "Collective YouTube sentiment summary"
 }}
-""",  # noqa: E501
+""",
                     }
                 ],
                 response_format={"type": "json_object"},
@@ -193,19 +200,21 @@ Respond in JSON format:
                 dict[str, Any], json.loads(response.choices[0].message.content)
             )
 
-            # Validate and set defaults
             result["overall_sentiment"] = result.get("overall_sentiment", "neutral")
             result["confidence"] = max(0, min(10, result.get("confidence", 0)))
             result["key_points"] = result.get("key_points", [])[:5]
-            result["summary"] = result.get("summary", "YouTube analysis completed")
+            result["summary"] = result.get(
+                "summary", "YouTube sentiment analysis complete"
+            )
 
             print(
-                f"✅ YouTube analysis completed: {result['overall_sentiment']} (confidence: {result['confidence']}/10)"  # noqa: E501
+                f"✅ YouTube 분석 완료: {result['overall_sentiment']} "
+                f"(신뢰도 {result['confidence']}/10)"
             )
             return result
 
         except Exception as e:
-            print(f"❌ YouTube analysis error: {e}")
+            print(f"❌ YouTube 분석 중 오류: {e}")
             return {
                 "overall_sentiment": "neutral",
                 "confidence": 0,

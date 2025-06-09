@@ -58,7 +58,7 @@ class ChartImageCollector:
         self.selenium_timeout: int = Config.SELENIUM_TIMEOUT
 
         # 차트 이미지 저장 디렉토리 초기화
-        self.chart_images_dir = Config.ensure_chart_images_dir()
+        self.chart_images_dir = Config.CHART_IMAGES_DIR
 
         self._initialize_driver()
 

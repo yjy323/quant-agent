@@ -1,4 +1,4 @@
-# main.py (YouTube Integration)
+# main.py (DB Integration)
 
 import time
 from datetime import datetime
@@ -9,6 +9,7 @@ import pyupbit  # type: ignore
 from chart_image_collector import ChartImageCollector
 from config import Config
 from data_collector import CryptoDataCollector
+from database_manager import DatabaseManager
 from decision_maker import DecisionMaker
 from trader import Trader
 from youtube_captions_collector import YouTubeCaptionsCollector
@@ -22,9 +23,9 @@ class TradingBot:
         self.trader = Trader(self.upbit)
         self.chart_collector = ChartImageCollector()
         self.youtube_collector = YouTubeCaptionsCollector()
+        self.db_manager = DatabaseManager()
 
     def print_status(self, investment_status: Dict[str, Any]) -> None:
-        """현재 상태 출력"""
         print("\n" + "=" * 70)
         print(f"📊 투자 상태 ({datetime.now().strftime('%Y-%m-%d %H:%M:%S')})")
         print("=" * 70)
@@ -42,8 +43,10 @@ class TradingBot:
         print("=" * 70)
 
     def run_single_cycle(self) -> None:
-        """단일 거래 사이클 실행"""
-        print(f"\n🚀 거래 사이클 시작 ({datetime.now().strftime('%H:%M:%S')})")
+        cycle_start_time = datetime.now()
+        print(f"\n🚀 거래 사이클 시작 ({cycle_start_time.strftime('%H:%M:%S')})")
+
+        analysis_start_time = time.time()
 
         # 1. 수치 데이터 수집
         print("📡 수치 데이터 수집 중...")
@@ -69,24 +72,45 @@ class TradingBot:
             ai_formatted_data, chart_file_path, youtube_data
         )
 
+        analysis_duration_ms = int((time.time() - analysis_start_time) * 1000)
+
         # 6. AI 결정 출력
         self._print_ai_decision(ai_decision)
 
         # 7. 거래 실행
         print("\n💼 거래 실행...")
         trade_result = self.trader.execute_decision(ai_decision)
+
         if trade_result:
             print(f"✅ 거래 완료: {trade_result}")
 
+        # 8. DB에 모든 데이터 저장
+        print("💾 거래 사이클 데이터 저장 중...")
+        try:
+            db_success = self.db_manager.record_trading_cycle(
+                ai_decision=ai_decision,
+                ai_formatted_data=ai_formatted_data,
+                chart_result=chart_result,
+                youtube_data=youtube_data,
+                trade_result=trade_result,
+                cycle_start_time=cycle_start_time,
+                analysis_duration_ms=analysis_duration_ms,
+            )
+
+            if not db_success:
+                print("⚠️  DB 저장 실패했지만 거래는 정상 완료됨")
+
+        except Exception as e:
+            print(f"⚠️  DB 저장 중 오류 발생: {e}")
+            print("거래는 정상 완료되었으나 DB 기록에 실패했습니다.")
+
     def _print_ai_decision(self, ai_decision: Dict[str, Any]) -> None:
-        """AI 결정 상세 출력"""
         print("\n" + "🎯" * 25 + " AI 분석 결과 " + "🎯" * 25)
 
         decision = ai_decision.get("decision", "unknown").upper()
         ratio = ai_decision.get("ratio", 0)
         reason = ai_decision.get("reason", "No reason provided")
 
-        # 결정 출력
         decision_emoji = {"BUY": "🟢", "SELL": "🔴", "HOLD": "🟡"}.get(decision, "❓")
         print(f"{decision_emoji} **결정**: {decision}")
 
@@ -96,7 +120,6 @@ class TradingBot:
 
         print(f"📝 **근거**: {reason}")
 
-        # 분석 요소별 결과
         if ai_decision.get("chart_analysis"):
             print(f"📊 **차트 분석**: {ai_decision['chart_analysis']}")
 
@@ -106,9 +129,9 @@ class TradingBot:
         print("🎯" * 65)
 
     def run(self) -> None:
-        """메인 실행 루프"""
-        print("🚀 비트코인 AI 자동매매 봇 시작 (YouTube 분석 통합)")
+        print("🚀 비트코인 AI 자동매매 봇 시작 (DB 통합)")
         print(f"🔄 거래 간격: {Config.TRADING_INTERVAL_SECONDS}초")
+        print(f"💾 DB 저장: {self.db_manager.db_path}")
         print("-" * 70)
 
         cycle_count = 0
