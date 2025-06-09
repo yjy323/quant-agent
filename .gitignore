@@ -8,6 +8,7 @@ static/*
 db/*
 !db/.gitkeep
 
+
 ### macOS ###
 # General
 .DS_Store
