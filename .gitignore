@@ -3,6 +3,8 @@
 
 ### Personal ###
 data/*
+db/*
+!db/.gitkeep
 
 ### macOS ###
 # General
