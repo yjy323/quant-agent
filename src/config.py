@@ -48,6 +48,7 @@ class Config:
     YOUTUBE_ANALYSIS_MAX_TOKENS = 1000
 
     # SQLite Settings
-    DB_DIR = Path("db")
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    DB_DIR = BASE_DIR / "db"
     SQLITE_DB_PATH = DB_DIR / "trading.db"
     SQLITE_TABLE_NAME = "trading_decisions"
