@@ -5,7 +5,7 @@ echo "🚀 배포 스크립트 실행 시작"
 
 PROJECT_DIR="/home/ubuntu/quant-agent"
 VENV_DIR="$PROJECT_DIR/.venv"
-MAIN_PROCESS="main.py"
+MAIN_PROCESS="$PROJECT_DIR/src/main.py"
 DASHBOARD_RUN_SCRIPT="$PROJECT_DIR/dashboard/run.sh"
 
 echo "📦 가상환경 활성화 및 의존성 설치"
@@ -18,7 +18,7 @@ pkill -f "$MAIN_PROCESS" || echo "ℹ️ main.py 프로세스 없음"
 pkill -f streamlit || echo "ℹ️ streamlit 프로세스 없음"
 
 echo "✅ 메인 프로그램 백그라운드 실행"
-nohup python3 main.py > logs/main.log 2>&1 &
+nohup python3 "$MAIN_PROCESS" > logs/main.log 2>&1 &
 
 echo "✅ 대시보드 백그라운드 실행"
 chmod +x "$DASHBOARD_RUN_SCRIPT"
