@@ -4,10 +4,12 @@
 ### Personal ###
 static/*
 !static/.gitkeep
+!static/encoded_chart_images/.gitkeep
 
 db/*
 !db/.gitkeep
 
+*.pem
 
 ### macOS ###
 # General
