@@ -6,17 +6,17 @@ from typing import Any, cast
 
 import pyupbit  # type: ignore
 
-from config import Config
-from fear_greed_collector import FearGreedDataCollector
+from ..config import Config
 
 # 새로운 지표 모듈 임포트
-from indicators.aggregator import IndicatorAggregator
-from indicators.bollinger import BollingerIndicator
-from indicators.exceptions import IndicatorError
-from indicators.macd import MACDIndicator
-from indicators.moving_average import MovingAverageIndicator
-from indicators.rsi import RSIIndicator
-from news_collector import NewsCollector  # 새로 추가
+from ..utils.indicators.aggregator import IndicatorAggregator
+from ..utils.indicators.bollinger import BollingerIndicator
+from ..utils.indicators.exceptions import IndicatorError
+from ..utils.indicators.macd import MACDIndicator
+from ..utils.indicators.moving_average import MovingAverageIndicator
+from ..utils.indicators.rsi import RSIIndicator
+from .fear_greed_collector import FearGreedDataCollector
+from .news_collector import NewsCollector  # 새로 추가
 
 
 class CryptoDataCollector:

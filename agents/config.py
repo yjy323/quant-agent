@@ -49,6 +49,6 @@ class Config:
 
     # SQLite Settings
     BASE_DIR = Path(__file__).resolve().parent.parent
-    DB_DIR = BASE_DIR / "db"
+    DB_DIR = BASE_DIR / "database"
     SQLITE_DB_PATH = DB_DIR / "trading.db"
     SQLITE_TABLE_NAME = "trading_decisions"

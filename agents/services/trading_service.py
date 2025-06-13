@@ -3,7 +3,6 @@
 from typing import Any
 
 import pyupbit  # type: ignore
-
 from config import Config
 
 
