@@ -2,6 +2,8 @@
 # Edit at https://www.toptal.com/developers/gitignore?templates=venv,python,macos
 
 ### Personal ###
+notebooks
+
 static/*
 !static/.gitkeep
 !static/encoded_chart_images/.gitkeep
