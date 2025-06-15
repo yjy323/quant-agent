@@ -5,14 +5,14 @@ from datetime import datetime
 from typing import Any, Dict
 
 import pyupbit  # type: ignore
-
-from chart_image_collector import ChartImageCollector
 from config import Config
-from data_collector import CryptoDataCollector
-from database_manager import DatabaseManager
-from decision_maker import DecisionMaker
-from trader import Trader
-from youtube_captions_collector import YouTubeCaptionsCollector
+from services.trading_service import Trader
+
+from agents.decision_agent import DecisionMaker
+from pipelines.collectors.chart_collector import ChartImageCollector
+from pipelines.collectors.market_collector import CryptoDataCollector
+from pipelines.collectors.youtube_collector import YouTubeCaptionsCollector
+from pipelines.storage.database_manager import DatabaseManager
 
 
 class TradingBot:

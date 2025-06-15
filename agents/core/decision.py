@@ -3,9 +3,8 @@
 import json
 from typing import Any, Optional, cast
 
-from openai import OpenAI  # type: ignore
-
 from config import Config
+from openai import OpenAI  # type: ignore
 
 
 class DecisionMaker:

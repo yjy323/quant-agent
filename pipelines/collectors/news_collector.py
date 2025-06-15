@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 import serpapi
 
-from config import Config
+from ..config import Config
 
 
 class NewsCollector:

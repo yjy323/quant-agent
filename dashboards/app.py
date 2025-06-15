@@ -1,11 +1,7 @@
-import os
-import sys
 from datetime import date
 
 import streamlit as st
 from services.db_service import DBService
-
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../src")))
 
 # 페이지 설정
 st.set_page_config(

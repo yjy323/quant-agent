@@ -2,7 +2,7 @@ from datetime import date
 
 import pandas as pd
 
-from database_manager import DatabaseManager
+from pipelines.storage.database_manager import DatabaseManager
 
 
 class DBService:
