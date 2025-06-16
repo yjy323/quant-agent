@@ -4,8 +4,8 @@ from typing import Any, Dict
 
 import pyupbit  # type: ignore
 
-from agents.agents.decision_agent import DecisionMaker
 from agents.config import Config
+from agents.core.decision import DecisionMaker
 from agents.services.trading import Trader
 from pipelines.collectors.chart_collector import ChartImageCollector
 from pipelines.collectors.market_collector import CryptoDataCollector
